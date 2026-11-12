@@ -15,3 +15,8 @@ verify_jwt = false
 verify_jwt = true
 [functions.seller-upload-url]
 verify_jwt = true
+
+[functions.create-order]
+verify_jwt = true
+[functions.payment-status]
+verify_jwt = true

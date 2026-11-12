@@ -16,4 +16,47 @@
   sb.auth.onAuthStateChange(function(_event,session){setTimeout(function(){sync(session);},0);});
   async function loadLiveProducts(){try{var r=await sb.from('products').select('id,name,category,description,price_kes').eq('status','published').order('created_at',{ascending:false});if(r.error)throw r.error;if(r.data&&r.data.length){products.splice(0,products.length,...r.data.map(function(p){return {id:p.id,name:p.name,cat:p.category,desc:p.description,price:p.price_kes,icon:'▣',tag:'VERIFIED',rating:'—'};}));if(typeof render==='function')render();}}catch(e){console.warn('Marketplace catalogue unavailable:',e.message);}}
   loadLiveProducts();
+
+  var checkoutBusy=false;
+  function checkoutMessage(t){var el=document.getElementById('tiCheckoutMessage');if(el)el.textContent=t;else if(typeof toast==='function')toast(t);}
+  window.TI_CHECKOUT=async function(){
+    if(checkoutBusy)return;
+    if(!window.TI_USER){checkoutMessage('Please sign in before checkout.');if(typeof setPage==='function')setPage('account');return;}
+    if(!cart||!cart.length){checkoutMessage('Your cart is empty.');return;}
+    var phone=document.getElementById('tiCheckoutPhone');
+    if(!phone||!phone.value.trim()){checkoutMessage('Enter the M-PESA phone number to receive the sandbox prompt.');return;}
+    checkoutBusy=true;checkoutMessage('Creating your order securely…');
+    try{
+      var items=cart.map(function(x){return {product_id:String(x.id),quantity:Number(x.qty)};});
+      var created=await sb.functions.invoke('create-order',{body:{items:items}});
+      if(created.error)throw new Error(created.data&&created.data.error||created.error.message||'Could not create order');
+      if(!created.data||!created.data.order_id)throw new Error('Order service returned an invalid response.');
+      var orderId=created.data.order_id;
+      localStorage.setItem('ti-pending-order',orderId);
+      checkoutMessage('Order created. Requesting M-PESA sandbox prompt…');
+      var pushed=await sb.functions.invoke('mpesa-stk-push',{body:{order_id:orderId,phone:phone.value.trim()}});
+      if(pushed.error)throw new Error(pushed.data&&pushed.data.error||pushed.error.message||'STK Push request failed');
+      checkoutMessage((pushed.data&&pushed.data.message)||'STK Push requested. Complete the prompt on the test handset, then check payment status.');
+      if(typeof toast==='function')toast('Sandbox STK Push requested');
+    }catch(e){checkoutMessage(e.message||'Checkout failed.');}
+    finally{checkoutBusy=false;}
+  };
+  window.TI_CHECK_PAYMENT=async function(){
+    var orderId=localStorage.getItem('ti-pending-order');
+    if(!orderId){checkoutMessage('No pending order was found on this device.');return;}
+    checkoutMessage('Checking verified payment status…');
+    try{
+      var r=await sb.functions.invoke('payment-status',{body:{order_id:orderId}});
+      if(r.error)throw new Error(r.data&&r.data.error||r.error.message||'Could not check payment');
+      var d=r.data||{},p=d.payment||{};
+      if(d.order_status==='paid'&&p.status==='paid'){
+        localStorage.removeItem('ti-pending-order');
+        if(typeof toast==='function')toast('Payment verified. Purchase complete.');
+        checkoutMessage('Payment verified successfully. M-PESA receipt: '+(p.receipt||'confirmed')+'.');
+        if(typeof render==='function')render();
+      }else{
+        checkoutMessage('Order: '+(d.order_status||'unknown')+' · Payment: '+(p.status||'not received')+'. '+(p.message||'The callback may still be processing. Check again shortly.'));
+      }
+    }catch(e){checkoutMessage(e.message||'Status check failed.');}
+  };
 })();

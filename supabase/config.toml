@@ -1,0 +1,17 @@
+project_id = "REPLACE_WITH_SUPABASE_PROJECT_REF"
+
+[api]
+enabled = true
+[db]
+port = 54322
+[studio]
+enabled = false
+
+[functions.mpesa-stk-push]
+verify_jwt = true
+[functions.mpesa-callback]
+verify_jwt = false
+[functions.software-download]
+verify_jwt = true
+[functions.seller-upload-url]
+verify_jwt = true

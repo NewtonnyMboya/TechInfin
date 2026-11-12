@@ -8,6 +8,8 @@ on:
       - '.github/workflows/android.yml'
       - 'index.html'
       - 'app.js'
+      - 'supabase-client-config.js'
+      - 'supabase-marketplace.js'
       - 'styles.css'
       - 'settings.gradle'
       - 'build.gradle'
@@ -38,6 +40,8 @@ jobs:
           cp index.html app/src/main/assets/www/index.html
           cp app.js app/src/main/assets/www/app.js
           cp styles.css app/src/main/assets/www/styles.css
+          cp supabase-client-config.js app/src/main/assets/www/supabase-client-config.js
+          cp supabase-marketplace.js app/src/main/assets/www/supabase-marketplace.js
           cat > app/build.gradle <<'EOF'
           plugins { id 'com.android.application' }
           android {
@@ -54,6 +58,7 @@ jobs:
           EOF
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
               <application
                   android:allowBackup="false"
                   android:label="TechInfin"

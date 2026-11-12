@@ -105,9 +105,13 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
 for each row execute procedure public.handle_new_user();
 
+create or replace function public.current_account_role()
+returns public.account_role language sql stable security definer set search_path = public
+as $ select role from public.profiles where id = auth.uid(); $;
+
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public
-as $$ select exists(select 1 from public.profiles where id = auth.uid() and role = 'admin'); $$;
+as $ select public.current_account_role() = 'admin'::public.account_role; $;
 
 alter table public.profiles enable row level security;
 alter table public.seller_profiles enable row level security;
@@ -118,7 +122,7 @@ alter table public.payments enable row level security;
 alter table public.download_events enable row level security;
 
 create policy "profiles read self or admin" on public.profiles for select to authenticated using (id = auth.uid() or public.is_admin());
-create policy "profiles update self" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid() and role = (select p.role from public.profiles p where p.id = auth.uid()));
+create policy "profiles update self" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid() and role = public.current_account_role());
 create policy "seller profile read self or admin" on public.seller_profiles for select to authenticated using (user_id = auth.uid() or public.is_admin());
 create policy "seller application create self" on public.seller_profiles for insert to authenticated with check (user_id = auth.uid() and status = 'pending');
 create policy "seller profile update self pending" on public.seller_profiles for update to authenticated using (user_id = auth.uid() and status = 'pending') with check (user_id = auth.uid() and status = 'pending');

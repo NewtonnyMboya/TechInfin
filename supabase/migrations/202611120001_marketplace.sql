@@ -107,11 +107,11 @@ for each row execute procedure public.handle_new_user();
 
 create or replace function public.current_account_role()
 returns public.account_role language sql stable security definer set search_path = public
-as $ select role from public.profiles where id = auth.uid(); $;
+as $$ select role from public.profiles where id = auth.uid(); $$;
 
 create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public
-as $ select public.current_account_role() = 'admin'::public.account_role; $;
+as $$ select public.current_account_role() = 'admin'::public.account_role; $$;
 
 alter table public.profiles enable row level security;
 alter table public.seller_profiles enable row level security;

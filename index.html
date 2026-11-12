@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080d1b"><title>TechInfin — Software Marketplace</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">∞</div><div><b>TECHINFIN</b><small>SOFTWARE MARKET</small></div></div>
+    <nav id="sideNav">
+      <button class="nav active" data-page="home">⌂ <span>Discover</span></button>
+      <button class="nav" data-page="explore">◈ <span>Explore software</span></button>
+      <button class="nav" data-page="cart">▣ <span>Shopping cart</span><i id="sideCount">0</i></button>
+      <button class="nav" data-page="library">⇩ <span>My library</span></button>
+      <button class="nav" data-page="seller">↗ <span>Sell software</span></button>
+      <button class="nav" data-page="account">◉ <span>My account</span></button>
+    </nav>
+    <div class="side-bottom"><div class="secure">✦ Secure digital marketplace</div><small>© 2026 TechInfin</small></div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <button class="mobile-brand" data-page="home"><span class="brand-mark">∞</span><b>TECHINFIN</b></button>
+      <div class="crumb">Marketplace <span>/</span> <b id="crumb">Discover</b></div>
+      <div class="top-actions"><button class="icon-btn" id="themeBtn" aria-label="Toggle theme">☼</button><button class="icon-btn" data-page="cart" aria-label="Cart">▣ <em id="cartCount">0</em></button><button class="avatar" data-page="account">G</button></div>
+    </header>
+    <section class="content" id="pageContent"></section>
+    <nav class="bottom-nav">
+      <button class="active" data-page="home"><b>⌂</b><small>Home</small></button>
+      <button data-page="explore"><b>◈</b><small>Explore</small></button>
+      <button data-page="cart"><b>▣</b><small>Cart</small></button>
+      <button data-page="library"><b>⇩</b><small>Library</small></button>
+      <button data-page="account"><b>◉</b><small>Account</small></button>
+    </nav>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body></html>

@@ -51,6 +51,7 @@
       var d=r.data||{},p=d.payment||{};
       if(d.order_status==='paid'&&p.status==='paid'){
         localStorage.removeItem('ti-pending-order');
+        cart=[];if(typeof save==='function')save();
         if(typeof toast==='function')toast('Payment verified. Purchase complete.');
         checkoutMessage('Payment verified successfully. M-PESA receipt: '+(p.receipt||'confirmed')+'.');
         if(typeof render==='function')render();

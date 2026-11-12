@@ -145,3 +145,9 @@ create policy "seller list own files" on storage.objects for select to authentic
 using (bucket_id='software-private' and (storage.foldername(name))[1]=auth.uid()::text);
 -- Buyers never receive direct bucket read access. A trusted Edge Function checks paid order
 -- entitlement and returns a short-lived signed URL.
+
+-- Admin-only moderation and seller approval. Admin role is assigned out-of-band.
+create policy "admin manages seller applications" on public.seller_profiles for update to authenticated
+using (public.is_admin()) with check (public.is_admin());
+create policy "admin moderates products" on public.products for update to authenticated
+using (public.is_admin()) with check (public.is_admin());

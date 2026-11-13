@@ -19,14 +19,18 @@ Deno.serve(async (req) => {
   if (!shortcode || !passkey || !callback?.startsWith("https://")) return json({ error: "Daraja sandbox is not fully configured" }, 503);
   const timestamp = new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0,14);
   const password = btoa(shortcode + passkey + timestamp);
+  const token = await darajaToken();
   const paymentId = crypto.randomUUID();
   const { error: insertError } = await db.from("payments").insert({ id: paymentId, order_id, buyer_id: auth.data.user.id, amount_kes: order.amount_kes, phone_number: msisdn, status: "initiated" });
   if (insertError) throw insertError;
-  const token = await darajaToken();
-  const response = await fetch(darajaBase()+"/mpesa/stkpush/v1/processrequest", {
+  let response: Response;
+  try { response = await fetch(darajaBase()+"/mpesa/stkpush/v1/processrequest", {
    method:"POST", headers:{ Authorization:"Bearer "+token, "Content-Type":"application/json" },
    body:JSON.stringify({ BusinessShortCode:shortcode, Password:password, Timestamp:timestamp, TransactionType:transactionType, Amount:order.amount_kes, PartyA:msisdn, PartyB:shortcode, PhoneNumber:msisdn, CallBackURL:callback, AccountReference:"TECHINFIN-"+order.id.slice(0,8), TransactionDesc:"TechInfin software purchase" })
-  });
+  }); } catch (networkError) {
+   await db.from("payments").update({status:"failed",result_description:"Daraja network request failed before a confirmed STK request"}).eq("id",paymentId);
+   throw networkError;
+  }
   const result = await response.json();
   if (!response.ok || result.ResponseCode !== "0" || !result.CheckoutRequestID) {
    await db.from("payments").update({status:"failed",result_description:result.errorMessage ?? result.ResponseDescription ?? "STK request failed"}).eq("id",paymentId);

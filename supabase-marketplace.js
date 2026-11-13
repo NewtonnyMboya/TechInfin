@@ -40,7 +40,9 @@
       var row={seller_id:window.TI_USER.id,name:title,slug:slug,category:get('tiProductCategory').value,description:description,price_kes:price,version:get('tiProductVersion').value.trim()||null,compatibility:get('tiProductCompat').value.trim()||null,storage_path:signed.data.path,status:'pending_review'};
       var created=await sb.from('products').insert(row).select('id').single();
       if(created.error)throw created.error;
-      say('Submitted successfully. Your software remains private until approved and published.');
+      var scan=await sb.functions.invoke('verify-software',{body:{product_id:created.data.id}});
+      if(scan.error){say('Upload stored privately. Malware verification is not yet complete; the listing cannot be published. '+(scan.data&&scan.data.error||scan.error.message));}
+      else{say((scan.data&&scan.data.message)||'File verification completed. Awaiting administrator review.');}
       if(typeof render==='function')render();
     }catch(e){say(e.message||'Upload failed.');}
   };
@@ -49,11 +51,11 @@
     var el=document.getElementById('tiAdminQueue');if(!el||!window.TI_IS_ADMIN)return;el.textContent='Loading moderation queue…';
     try{
       var sr=await sb.from('seller_profiles').select('user_id,store_name,contact_email').eq('status','pending').order('created_at');if(sr.error)throw sr.error;
-      var pr=await sb.from('products').select('id,name,category,price_kes').eq('status','pending_review').order('created_at');if(pr.error)throw pr.error;
+      var pr=await sb.from('products').select('id,name,category,price_kes,scan_status').eq('status','pending_review').order('created_at');if(pr.error)throw pr.error;
       var html='<h2>Seller applications ('+(sr.data||[]).length+')</h2>';
       (sr.data||[]).forEach(function(x){html+='<div class="cart-row"><div><b>'+safeText(x.store_name)+'</b><small>'+safeText(x.contact_email||'')+'</small></div><button class="btn" data-seller-id="'+x.user_id+'" data-review="approved">Approve</button><button class="remove" data-seller-id="'+x.user_id+'" data-review="rejected">Reject</button></div>';});
       html+='<h2 style="margin-top:24px">Software awaiting review ('+(pr.data||[]).length+')</h2>';
-      (pr.data||[]).forEach(function(x){html+='<div class="cart-row"><div><b>'+safeText(x.name)+'</b><small>'+safeText(x.category)+' · KES '+Number(x.price_kes).toLocaleString()+'</small></div><button class="btn" data-product-id="'+x.id+'" data-review="published">Publish</button><button class="remove" data-product-id="'+x.id+'" data-review="rejected">Reject</button></div>';});
+      (pr.data||[]).forEach(function(x){html+='<div class="cart-row"><div><b>'+safeText(x.name)+'</b><small>'+safeText(x.category)+' · KES '+Number(x.price_kes).toLocaleString()+' · File scan: '+safeText(x.scan_status||'pending')+'</small></div>'+(x.scan_status==='clean'?'<button class="btn" data-product-id="'+x.id+'" data-review="published">Publish</button>':'<button class="btn" disabled>Awaiting clean scan</button>')+'<button class="remove" data-product-id="'+x.id+'" data-review="rejected">Reject</button></div>';});
       el.innerHTML=html;
       el.querySelectorAll('[data-seller-id]').forEach(function(b){b.addEventListener('click',function(){window.TI_REVIEW_SELLER(b.dataset.sellerId,b.dataset.review);});});
       el.querySelectorAll('[data-product-id]').forEach(function(b){b.addEventListener('click',function(){window.TI_REVIEW_PRODUCT(b.dataset.productId,b.dataset.review);});});

@@ -19,6 +19,32 @@
   loadLiveProducts();
 
   function safeText(v){return String(v||'').replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c];});}
+
+  window.TI_UPLOAD_PRODUCT=async function(){
+    var get=function(id){return document.getElementById(id);},status=get('tiUploadMessage');
+    function say(t){if(status)status.textContent=t;else msg(t);}
+    try{
+      if(!window.TI_USER||!window.TI_SELLER_PROFILE||window.TI_SELLER_PROFILE.status!=='approved')throw new Error('An approved seller account is required.');
+      var f=get('tiSoftwareFile').files[0],title=get('tiProductName').value.trim(),description=get('tiProductDescription').value.trim(),price=Number(get('tiProductPrice').value),type=f&&(f.type||'application/octet-stream');
+      if(!f)throw new Error('Choose a software file.');
+      if(f.size<1||f.size>524288000)throw new Error('File must be between 1 byte and 500 MB.');
+      if(['application/zip','application/x-zip-compressed','application/octet-stream','application/pdf','application/vnd.android.package-archive'].indexOf(type)<0)throw new Error('Only ZIP, APK, PDF or binary software files are accepted.');
+      if(title.length<3||title.length>120||description.length<10||!Number.isSafeInteger(price)||price<1||price>10000000)throw new Error('Enter a valid title, description (10+ characters), and KES price.');
+      say('Requesting private upload permission…');
+      var signed=await sb.functions.invoke('seller-upload-url',{body:{file_name:f.name,content_type:type}});
+      if(signed.error)throw new Error(signed.data&&signed.data.error||signed.error.message);
+      var uploaded=await sb.storage.from('software-private').uploadToSignedUrl(signed.data.path,signed.data.token,f,{contentType:type,upsert:false});
+      if(uploaded.error)throw uploaded.error;
+      say('File uploaded. Submitting product for administrator review…');
+      var slug=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80)+'-'+crypto.randomUUID().slice(0,8);
+      var row={seller_id:window.TI_USER.id,name:title,slug:slug,category:get('tiProductCategory').value,description:description,price_kes:price,version:get('tiProductVersion').value.trim()||null,compatibility:get('tiProductCompat').value.trim()||null,storage_path:signed.data.path,status:'pending_review'};
+      var created=await sb.from('products').insert(row).select('id').single();
+      if(created.error)throw created.error;
+      say('Submitted successfully. Your software remains private until approved and published.');
+      if(typeof render==='function')render();
+    }catch(e){say(e.message||'Upload failed.');}
+  };
+
   window.TI_ADMIN_REFRESH=async function(){
     var el=document.getElementById('tiAdminQueue');if(!el||!window.TI_IS_ADMIN)return;el.textContent='Loading moderation queue…';
     try{

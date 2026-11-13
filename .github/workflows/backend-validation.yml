@@ -1,0 +1,33 @@
+name: Validate TechInfin backend
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'supabase/**'
+      - 'scanner-service/**'
+      - '.github/workflows/backend-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check Edge Function TypeScript
+        run: |
+          deno check supabase/functions/seller-upload-url/index.ts
+          deno check supabase/functions/verify-software/index.ts
+          deno check supabase/functions/software-download/index.ts
+          deno check supabase/functions/create-order/index.ts
+          deno check supabase/functions/mpesa-stk-push/index.ts
+          deno check supabase/functions/mpesa-callback/index.ts
+          deno check supabase/functions/payment-status/index.ts
+      - name: Compile scanner service
+        run: python -m py_compile scanner-service/server.py

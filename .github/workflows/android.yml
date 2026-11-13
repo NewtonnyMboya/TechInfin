@@ -109,6 +109,10 @@ jobs:
               }
           }
           EOF
+      - name: Check marketplace JavaScript syntax
+        run: |
+          node --check app.js
+          node --check supabase-marketplace.js
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
       - name: Upload APK

@@ -4,9 +4,8 @@ import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse
 
-import magic
 import requests
 from flask import Flask, jsonify, request
 

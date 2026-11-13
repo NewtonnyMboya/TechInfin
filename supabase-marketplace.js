@@ -18,7 +18,7 @@
   async function loadLiveProducts(){try{var r=await sb.from('products').select('id,name,category,description,price_kes').eq('status','published').order('created_at',{ascending:false});if(r.error)throw r.error;var live=(r.data||[]).map(function(p){return {id:p.id,name:p.name,cat:p.category,desc:p.description,price:p.price_kes,icon:'▣',tag:'VERIFIED',rating:'—'};});products.splice(0,products.length,...live);var valid=new Set(live.map(function(p){return String(p.id);}));var kept=cart.filter(function(x){return valid.has(String(x.id));});if(kept.length!==cart.length){cart=kept;if(typeof save==='function')save();}if(typeof render==='function')render();}catch(e){console.warn('Marketplace catalogue unavailable:',e.message);}}
   loadLiveProducts();
 
-  function safeText(v){return String(v||'').replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c];});}
+  function safeText(v){return String(v||'').replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}
 
   window.TI_UPLOAD_PRODUCT=async function(){
     var get=function(id){return document.getElementById(id);},status=get('tiUploadMessage');
@@ -48,19 +48,28 @@
   window.TI_ADMIN_REFRESH=async function(){
     var el=document.getElementById('tiAdminQueue');if(!el||!window.TI_IS_ADMIN)return;el.textContent='Loading moderation queue…';
     try{
-      var sr=await sb.from('seller_profiles').select('user_id,store_name,legal_name,contact_email,status').eq('status','pending').order('created_at');if(sr.error)throw sr.error;
-      var pr=await sb.from('products').select('id,name,category,description,price_kes,seller_id,status').eq('status','pending_review').order('created_at');if(pr.error)throw pr.error;
+      var sr=await sb.from('seller_profiles').select('user_id,store_name,contact_email').eq('status','pending').order('created_at');if(sr.error)throw sr.error;
+      var pr=await sb.from('products').select('id,name,category,price_kes').eq('status','pending_review').order('created_at');if(pr.error)throw pr.error;
       var html='<h2>Seller applications ('+(sr.data||[]).length+')</h2>';
-      (sr.data||[]).forEach(function(x){html+='<div class=\"cart-row\"><div><b>'+safeText(x.store_name)+'</b><small>'+safeText(x.contact_email||'')+'</small></div><button class=\"btn\" onclick=\"TI_REVIEW_SELLER(\\''+x.user_id+'\\',\\'approved\\')\">Approve</button><button class=\"remove\" onclick=\"TI_REVIEW_SELLER(\\''+x.user_id+'\\',\\'rejected\\')\">Reject</button></div>';});
-      html+='<h2 style=\"margin-top:24px\">Software awaiting review ('+(pr.data||[]).length+')</h2>';
-      (pr.data||[]).forEach(function(x){html+='<div class=\"cart-row\"><div><b>'+safeText(x.name)+'</b><small>'+safeText(x.category)+' · KES '+Number(x.price_kes).toLocaleString()+'</small></div><button class=\"btn\" onclick=\"TI_REVIEW_PRODUCT(\\''+x.id+'\\',\\'published\\')\">Publish</button><button class=\"remove\" onclick=\"TI_REVIEW_PRODUCT(\\''+x.id+'\\',\\'rejected\\')\">Reject</button></div>';});
+      (sr.data||[]).forEach(function(x){html+='<div class="cart-row"><div><b>'+safeText(x.store_name)+'</b><small>'+safeText(x.contact_email||'')+'</small></div><button class="btn" data-seller-id="'+x.user_id+'" data-review="approved">Approve</button><button class="remove" data-seller-id="'+x.user_id+'" data-review="rejected">Reject</button></div>';});
+      html+='<h2 style="margin-top:24px">Software awaiting review ('+(pr.data||[]).length+')</h2>';
+      (pr.data||[]).forEach(function(x){html+='<div class="cart-row"><div><b>'+safeText(x.name)+'</b><small>'+safeText(x.category)+' · KES '+Number(x.price_kes).toLocaleString()+'</small></div><button class="btn" data-product-id="'+x.id+'" data-review="published">Publish</button><button class="remove" data-product-id="'+x.id+'" data-review="rejected">Reject</button></div>';});
       el.innerHTML=html;
+      el.querySelectorAll('[data-seller-id]').forEach(function(b){b.addEventListener('click',function(){window.TI_REVIEW_SELLER(b.dataset.sellerId,b.dataset.review);});});
+      el.querySelectorAll('[data-product-id]').forEach(function(b){b.addEventListener('click',function(){window.TI_REVIEW_PRODUCT(b.dataset.productId,b.dataset.review);});});
     }catch(e){el.textContent='Moderation queue error: '+(e.message||'Unknown error');}
   };
   window.TI_REVIEW_SELLER=async function(id,status){if(!window.TI_IS_ADMIN||['approved','rejected'].indexOf(status)<0)return;var r=await sb.from('seller_profiles').update({status:status,updated_at:new Date().toISOString()}).eq('user_id',id);if(r.error){msg(r.error.message);return;}msg('Seller status updated.');window.TI_ADMIN_REFRESH();};
   window.TI_REVIEW_PRODUCT=async function(id,status){if(!window.TI_IS_ADMIN||['published','rejected'].indexOf(status)<0)return;var r=await sb.from('products').update({status:status,updated_at:new Date().toISOString()}).eq('id',id);if(r.error){msg(r.error.message);return;}msg(status==='published'?'Product published.':'Product rejected.');window.TI_ADMIN_REFRESH();loadLiveProducts();};
   window.TI_DOWNLOAD_PRODUCT=async function(id){try{if(!window.TI_USER)throw new Error('Sign in to download.');var r=await sb.functions.invoke('software-download',{body:{product_id:id}});if(r.error)throw new Error(r.data&&r.data.error||r.error.message);if(!r.data||!r.data.download_url)throw new Error('No download link returned.');window.open(r.data.download_url,'_blank','noopener');}catch(e){msg(e.message||'Download failed.');}};
-  window.TI_LOAD_LIBRARY=async function(){var el=document.getElementById('tiLibraryItems');if(!el||!window.TI_USER)return;try{var r=await sb.from('order_items').select('product_id,product_name,orders!inner(status,buyer_id)').eq('orders.buyer_id',window.TI_USER.id).eq('orders.status','paid');if(r.error)throw r.error;var seen={},rows=(r.data||[]).filter(function(x){if(seen[x.product_id])return false;seen[x.product_id]=true;return true;});el.innerHTML=rows.length?rows.map(function(x){return '<div class=\"cart-row\"><div><b>'+safeText(x.product_name)+'</b><small>Verified paid purchase</small></div><button class=\"btn\" onclick=\"TI_DOWNLOAD_PRODUCT(\\''+x.product_id+'\\')\">Secure download</button></div>';}).join(''):'<div class=\"empty\"><b>Your library is empty</b>Paid purchases appear after payment verification.</div>';}catch(e){el.textContent='Could not load library: '+e.message;}};
+  window.TI_LOAD_LIBRARY=async function(){
+    var el=document.getElementById('tiLibraryItems');if(!el||!window.TI_USER)return;
+    try{var r=await sb.from('order_items').select('product_id,product_name,orders!inner(status,buyer_id)').eq('orders.buyer_id',window.TI_USER.id).eq('orders.status','paid');if(r.error)throw r.error;
+      var seen={},rows=(r.data||[]).filter(function(x){if(seen[x.product_id])return false;seen[x.product_id]=true;return true;});
+      el.innerHTML=rows.length?rows.map(function(x){return '<div class="cart-row"><div><b>'+safeText(x.product_name)+'</b><small>Verified paid purchase</small></div><button class="btn" data-download-id="'+x.product_id+'">Secure download</button></div>';}).join(''):'<div class="empty"><b>Your library is empty</b>Paid purchases appear after payment verification.</div>';
+      el.querySelectorAll('[data-download-id]').forEach(function(b){b.addEventListener('click',function(){window.TI_DOWNLOAD_PRODUCT(b.dataset.downloadId);});});
+    }catch(e){el.textContent='Could not load library: '+e.message;}
+  };
   var checkoutBusy=false;
   function checkoutMessage(t){var el=document.getElementById('tiCheckoutMessage');if(el)el.textContent=t;else if(typeof toast==='function')toast(t);}
   window.TI_CHECKOUT=async function(){

@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     const response = await fetch(scannerUrl, {
       method: "POST",
       headers: { "Authorization": "Bearer " + scannerKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ download_url: signed.signedUrl, max_bytes: 524288000, product_id })
+      body: JSON.stringify({ download_url: signed.signedUrl, file_name: product.storage_path.split("/").pop(), max_bytes: 524288000, product_id })
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || typeof result.clean !== "boolean" ||

@@ -18,7 +18,7 @@
   async function loadLiveProducts(){try{var r=await sb.from('products').select('id,name,category,description,price_kes').eq('status','published').order('created_at',{ascending:false});if(r.error)throw r.error;var live=(r.data||[]).map(function(p){return {id:p.id,name:p.name,cat:p.category,desc:p.description,price:p.price_kes,icon:'▣',tag:'VERIFIED',rating:'—'};});products.splice(0,products.length,...live);var valid=new Set(live.map(function(p){return String(p.id);}));var kept=cart.filter(function(x){return valid.has(String(x.id));});if(kept.length!==cart.length){cart=kept;if(typeof save==='function')save();}if(typeof render==='function')render();}catch(e){console.warn('Marketplace catalogue unavailable:',e.message);}}
   loadLiveProducts();
 
-  function safeText(v){return String(v||'').replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c];});}
+  function safeText(v){return String(v||'').replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
 
   window.TI_UPLOAD_PRODUCT=async function(){
     var get=function(id){return document.getElementById(id);},status=get('tiUploadMessage');

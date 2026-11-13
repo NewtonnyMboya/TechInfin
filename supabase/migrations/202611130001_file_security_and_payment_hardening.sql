@@ -43,3 +43,22 @@ for each row execute function public.protect_product_scan_metadata();
 create unique index if not exists payments_one_active_attempt_per_order
   on public.payments(order_id)
   where status in ('initiated','pending');
+
+-- Scanner metadata must also be protected on initial product inserts.
+create or replace function public.reject_forged_scan_metadata_on_insert()
+returns trigger language plpgsql security definer set search_path=public
+as $$
+begin
+  if coalesce(auth.role(),'') <> 'service_role'
+     and (new.scan_status <> 'pending' or new.file_sha256 is not null
+          or new.file_size_bytes is not null or new.detected_mime is not null
+          or new.scan_provider is not null or new.scanned_at is not null) then
+    raise exception 'Scanner metadata is assigned only by the trusted scanner';
+  end if;
+  return new;
+end; $$;
+
+drop trigger if exists reject_forged_scan_metadata_on_insert on public.products;
+create trigger reject_forged_scan_metadata_on_insert
+before insert on public.products
+for each row execute function public.reject_forged_scan_metadata_on_insert();

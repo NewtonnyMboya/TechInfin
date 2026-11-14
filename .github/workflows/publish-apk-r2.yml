@@ -1,0 +1,53 @@
+name: Publish TechInfin APK to Cloudflare R2
+
+on:
+  workflow_run:
+    workflows: ["Build TechInfin Android APK"]
+    types: [completed]
+    branches: [main, master]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: TechInfin-debug-apk
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dist
+
+      - name: Locate APK
+        id: apk
+        shell: bash
+        run: |
+          APK_PATH="$(find dist -type f -name '*.apk' -print -quit)"
+          if [ -z "$APK_PATH" ]; then
+            echo "APK not found in downloaded artifact" >&2
+            exit 1
+          fi
+          echo "path=$APK_PATH" >> "$GITHUB_OUTPUT"
+          sha256sum "$APK_PATH"
+
+      - name: Upload APK to Cloudflare R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
+          APK_PATH: ${{ steps.apk.outputs.path }}
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing CLOUDFLARE_API_TOKEN repository secret"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing CLOUDFLARE_ACCOUNT_ID repository variable"; exit 1; }
+          test -n "$R2_BUCKET" || { echo "Missing CLOUDFLARE_R2_BUCKET repository variable"; exit 1; }
+          npx --yes wrangler@4 r2 object put "$R2_BUCKET/downloads/TechInfin-debug.apk" \
+            --file="$APK_PATH" \
+            --content-type="application/vnd.android.package-archive" \
+            --cache-control="public, max-age=300"
+          echo "Uploaded object: downloads/TechInfin-debug.apk"

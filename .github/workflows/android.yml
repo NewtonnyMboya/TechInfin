@@ -91,7 +91,9 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET" />
               <application
                   android:allowBackup="false"
-                  android:label="TechInfin"\n                  android:icon="@drawable/ic_launcher"\n                  android:roundIcon="@drawable/ic_launcher"
+                  android:label="TechInfin"
+                  android:icon="@drawable/ic_launcher"
+                  android:roundIcon="@drawable/ic_launcher"
                   android:theme="@android:style/Theme.Material.Light.NoActionBar">
                   <activity
                       android:name=".MainActivity"

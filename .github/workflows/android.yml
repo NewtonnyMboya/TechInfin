@@ -1,5 +1,18 @@
 name: Build TechInfin Android APK
 on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'app/**'
+      - '.github/workflows/android.yml'
+      - 'index.html'
+      - 'app.js'
+      - 'supabase-client-config.js'
+      - 'supabase-marketplace.js'
+      - 'styles.css'
+      - 'settings.gradle'
+      - 'build.gradle'
+      - 'gradle.properties'
   workflow_dispatch:
   push:
     branches: [ main, master ]

@@ -32,3 +32,9 @@ Output: `app/build/outputs/apk/debug/app-debug.apk`
 
 ## Backend setup
 See `backend/supabase-schema.sql` and `docs/PAYMENTS_AND_SECURITY.md`.
+
+## TechInfin branding icons
+
+- Android: the Android Actions workflow generates the custom launcher drawable and sets it as the app icon.
+- Debian XFCE: run `bash desktop/install-xfce-launcher.sh` from a checkout of this repository. The installer asks for the deployed TechInfin website URL, installs the SVG icon and creates an application-menu launcher. It prints the command to place a shortcut on the desktop.
+- The Android and XFCE launchers are independent; no marketplace or payment code is changed.

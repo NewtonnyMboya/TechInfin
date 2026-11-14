@@ -1,5 +1,18 @@
 name: Build TechInfin Android APK
 on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'app/**'
+      - '.github/workflows/android.yml'
+      - 'index.html'
+      - 'app.js'
+      - 'supabase-client-config.js'
+      - 'supabase-marketplace.js'
+      - 'styles.css'
+      - 'settings.gradle'
+      - 'build.gradle'
+      - 'gradle.properties'
   workflow_dispatch:
   push:
     branches: [ main, master ]
@@ -36,7 +49,24 @@ jobs:
       - name: Prepare Android app module from repository sources
         shell: bash
         run: |
-          mkdir -p app/src/main/assets/www app/src/main/java/com/infinitycybertech/techinfin
+          mkdir -p app/src/main/assets/www app/src/main/java/com/infinitycybertech/techinfin app/src/main/res/drawable
+          cat > app/src/main/res/drawable/ic_launcher.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="512dp" android:height="512dp"
+              android:viewportWidth="512" android:viewportHeight="512">
+              <path android:fillColor="#080D1B" android:pathData="M0,0h512v512h-512z"/>
+              <path android:fillColor="#00000000" android:strokeColor="#086BFF" android:strokeWidth="34" android:strokeLineCap="round" android:strokeLineJoin="round"
+                  android:pathData="M66,258 C66,155 188,130 256,256 C324,382 446,357 446,254 C446,151 324,130 256,256 C188,382 66,361 66,258"/>
+              <path android:fillColor="#00000000" android:strokeColor="#12DDEB" android:strokeWidth="24" android:strokeLineCap="round" android:strokeLineJoin="round"
+                  android:pathData="M68,258 C68,170 183,143 256,256 C329,369 444,346 444,254"/>
+              <path android:fillColor="#00000000" android:strokeColor="#A62CFF" android:strokeWidth="18" android:strokeLineCap="round" android:strokeLineJoin="round"
+                  android:pathData="M256,256 C329,143 444,166 444,254 C444,342 329,369 256,256"/>
+              <path android:fillColor="#16E8F0" android:pathData="M283,225 L440,158 L417,219 L477,195 L461,292 L431,251 L390,305 L283,225z"/>
+              <path android:fillColor="#D8FFFF" android:pathData="M256,224 L289,256 L256,288 L223,256z"/>
+              <path android:fillColor="#11DCEB" android:pathData="M244,36h24v95h-24z M126,70h20v70h-20z M366,70h20v70h-20z M244,381h24v95h-24z"/>
+              <path android:fillColor="#11DCEB" android:pathData="M116,80a20,20 0,1 0,40 0a20,20 0,1 0,-40 0 M356,80a20,20 0,1 0,40 0a20,20 0,1 0,-40 0 M236,28a20,20 0,1 0,40 0a20,20 0,1 0,-40 0 M236,476a20,20 0,1 0,40 0a20,20 0,1 0,-40 0"/>
+          </vector>
+          EOF
           cp index.html app/src/main/assets/www/index.html
           cp app.js app/src/main/assets/www/app.js
           cp styles.css app/src/main/assets/www/styles.css
@@ -61,7 +91,7 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET" />
               <application
                   android:allowBackup="false"
-                  android:label="TechInfin"
+                  android:label="TechInfin"\n                  android:icon="@drawable/ic_launcher"\n                  android:roundIcon="@drawable/ic_launcher"
                   android:theme="@android:style/Theme.Material.Light.NoActionBar">
                   <activity
                       android:name=".MainActivity"

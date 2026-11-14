@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+ <linearGradient id="loop" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#13f4ef"/><stop offset=".48" stop-color="#087cff"/><stop offset="1" stop-color="#a92bff"/></linearGradient>
+ <linearGradient id="arrow" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#087cff"/><stop offset=".55" stop-color="#12e8f0"/><stop offset="1" stop-color="#b9ffff"/></linearGradient>
+ <radialGradient id="bg"><stop stop-color="#102d80"/><stop offset="1" stop-color="#080d1b"/></radialGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="512" height="512" rx="96" fill="url(#bg)"/>
+<g fill="none" stroke="#08dce9" stroke-width="9" stroke-linecap="round" filter="url(#glow)">
+ <path d="M256 48v92m-92-57v70l50 48m142-118v70l-50 48M256 464v-91m-92 36v-55l50-48m142 103v-55l-50-48"/>
+ <path d="M22 256h70m328 0h70"/>
+ <g fill="#080d1b"><circle cx="256" cy="48" r="13"/><circle cx="164" cy="83" r="13"/><circle cx="348" cy="83" r="13"/><circle cx="256" cy="464" r="13"/><circle cx="164" cy="409" r="13"/><circle cx="348" cy="409" r="13"/><circle cx="22" cy="256" r="13"/><circle cx="490" cy="256" r="13"/></g>
+</g>
+<path d="M62 257c0-88 116-125 194-1 78 124 194 87 194-1s-116-125-194 1C178 381 62 344 62 257Z" fill="none" stroke="url(#loop)" stroke-width="39" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+<path d="M273 226 448 151 422 215 486 188 465 299 431 254 386 310Z" fill="url(#arrow)" stroke="#8cffff" stroke-width="5" stroke-linejoin="round" filter="url(#glow)"/>
+<path d="m256 224 34 32-34 32-34-32Z" fill="#9affff" stroke="#16e8f0" stroke-width="5" filter="url(#glow)"/>
+</svg>

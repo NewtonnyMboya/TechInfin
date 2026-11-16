@@ -99,6 +99,9 @@ def scan():
                 "detected_mime": detected,
                 "engine": version[:80]
             })
+    except subprocess.TimeoutExpired:
+        app.logger.warning("ClamAV scan timed out; refusing to approve the product")
+        return fail("ClamAV scan timed out; product must remain unpublished", 503)
     except (ValueError, requests.RequestException, zipfile.BadZipFile, subprocess.SubprocessError) as exc:
         return fail(str(exc), 422)
     except Exception:

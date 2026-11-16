@@ -44,11 +44,18 @@ Deno.serve(async (req) => {
     if (signError || !signed?.signedUrl) throw signError ?? new Error("Could not create scanner access URL");
 
     await db.from("products").update({ scan_status: "scanning" }).eq("id", product_id);
-    const response = await fetch(scannerUrl, {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + scannerKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ download_url: signed.signedUrl, file_name: product.storage_path.split("/").pop(), max_bytes: 524288000, product_id })
-    });
+    let response: Response;
+    try {
+      response = await fetch(scannerUrl, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + scannerKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ download_url: signed.signedUrl, file_name: product.storage_path.split("/").pop(), max_bytes: 524288000, product_id }),
+        signal: AbortSignal.timeout(120_000)
+      });
+    } catch {
+      await db.from("products").update({ scan_status: "error" }).eq("id", product_id);
+      return json({ error: "Scanner request timed out or is unavailable. Product remains unpublished." }, 503);
+    }
     const result = await response.json().catch(() => ({}));
     if (!response.ok || typeof result.clean !== "boolean" ||
         typeof result.sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(result.sha256) ||

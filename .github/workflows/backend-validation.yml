@@ -64,7 +64,7 @@ jobs:
           docker run --rm --entrypoint /bin/sh techinfin-clamav:ci -c '
             set -eu
             freshclam
-            python3 -c "import base64; open('/tmp/eicar.com','wb').write(base64.b64decode('WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCo='))"
+            printf "%b" "\\130\\065\\117\\041\\120\\045\\100\\101\\120\\133\\064\\134\\120\\132\\130\\065\\064\\050\\120\\136\\051\\067\\103\\103\\051\\067\\175\\044\\105\\111\\103\\101\\122\\055\\123\\124\\101\\116\\104\\101\\122\\104\\055\\101\\116\\124\\111\\126\\111\\122\\125\\123\\055\\124\\105\\123\\124\\055\\106\\111\\114\\105\\041\\044\\110\\053\\110\\052" > /tmp/eicar.com
             set +e
             clamscan --no-summary /tmp/eicar.com
             result=$?
